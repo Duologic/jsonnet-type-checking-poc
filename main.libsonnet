@@ -1,3 +1,4 @@
+local v = import './validate.libsonnet';
 local d = import 'github.com/jsonnet-libs/docsonnet/doc-util/main.libsonnet';
 
 {
@@ -168,11 +169,58 @@ local d = import 'github.com/jsonnet-libs/docsonnet/doc-util/main.libsonnet';
     ],
   ),
   schemaCheck(param, schema):
-    local v = import './validate.libsonnet';
     local indent = '    ';
     [
       v.validate(param, schema),
       '\n%sValue %s MUST match schema:' % [indent, std.manifestJson(param)],
       indent + std.manifestJsonEx(schema, '  ', '\n  ' + indent),
     ],
+
+  '#crdCheck': d.fn(
+    '`crdCheck` validates `object` against a set of CRDs.',
+    args=[
+      d.arg('object', d.T.object),
+      d.arg('crds', d.T.array),
+    ],
+  ),
+  crdCheck(object, crds):
+    local splitApiVersion = std.splitLimit(object.apiVersion, '/', 1);
+    local group = splitApiVersion[0];
+    local version = splitApiVersion[1];
+    local kind = object.kind;
+
+    local findVersion(versions, version) =
+      std.filter(
+        function(v)
+          v.namme == version,
+        versions
+      );
+
+
+    local foundcrds =
+      std.filter(
+        function(crd)
+          crd.spec.group == group
+          && crd.spec.names.kind == kind,
+        crds
+      );
+
+    assert std.length(foundcrds) > 0 : 'No CRD found for GroupVersionKind: %s' % std.join('/', [group, version, kind]);
+    assert std.length(foundcrds) == 1 : 'More than one CRD found for GroupVersionKind: %s' % std.join('/', [group, version, kind]);
+
+    local crd = foundcrds[0];
+
+    local versionobjs =
+      std.filter(
+        function(v)
+          v.name == version,
+        crd.spec.versions
+      );
+
+    assert std.length(versionobjs) > 0 : 'No version found for GroupVersionKind: %s' % std.join('/', [group, version, kind]);
+    assert std.length(versionobjs) == 1 : 'More than one version found for GroupVersionKind: %s' % std.join('/', [group, version, kind]);
+
+    local versionobj = versionobjs[0];
+
+    v.validate(object, versionobj.schema.openAPIV3Schema),
 }

@@ -60,7 +60,6 @@ RUNTIME ERROR: Assertion failed
 
 ```
 
-
 ## Install
 
 ```
@@ -73,10 +72,12 @@ jb install github.com/crdsonnet/validate-libsonnet@master
 local validate = import 'github.com/crdsonnet/validate-libsonnet/main.libsonnet'
 ```
 
+
 ## Index
 
 * [`fn checkParameters(checks)`](#fn-checkparameters)
 * [`fn checkParamsFromDocstring(params, docstring)`](#fn-checkparamsfromdocstring)
+* [`fn crdCheck(object, crds)`](#fn-crdcheck)
 * [`fn getChecksFromDocstring(params, docstring)`](#fn-getchecksfromdocstring)
 * [`fn schemaCheck(param, schema)`](#fn-schemacheck)
 
@@ -84,9 +85,13 @@ local validate = import 'github.com/crdsonnet/validate-libsonnet/main.libsonnet'
 
 ### fn checkParameters
 
-```ts
+```jsonnet
 checkParameters(checks)
 ```
+
+PARAMETERS:
+
+* **checks** (`object`)
 
 `checkParameters` validates parameters against their `checks`.
 
@@ -131,12 +136,16 @@ RUNTIME ERROR: Assertion failed
 
 ```
 
-
 ### fn checkParamsFromDocstring
 
-```ts
+```jsonnet
 checkParamsFromDocstring(params, docstring)
 ```
+
+PARAMETERS:
+
+* **params** (`array`)
+* **docstring** (`object`)
 
 `checkParamsFromDocstring` validates `params` against a docsonnet `docstring` object.
 
@@ -194,19 +203,39 @@ RUNTIME ERROR: Assertion failed
 
 ```
 
+### fn crdCheck
 
+```jsonnet
+crdCheck(object, crds)
+```
+
+PARAMETERS:
+
+* **object** (`object`)
+* **crds** (`array`)
+
+`crdCheck` validates `object` against a set of CRDs.
 ### fn getChecksFromDocstring
 
-```ts
+```jsonnet
 getChecksFromDocstring(params, docstring)
 ```
 
-`getChecksFromDocstring` returns checks for `params` derived from a docsonnet `docstring` object.
+PARAMETERS:
 
+* **params** (`array`)
+* **docstring** (`object`)
+
+`getChecksFromDocstring` returns checks for `params` derived from a docsonnet `docstring` object.
 ### fn schemaCheck
 
-```ts
+```jsonnet
 schemaCheck(param, schema)
 ```
+
+PARAMETERS:
+
+* **param** (`any`)
+* **schema** (`object`)
 
 `schemaCheck` validates `param` against a JSON `schema`. Note that this function does not resolve "$ref" and recursion.
