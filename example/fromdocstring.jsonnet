@@ -1,5 +1,5 @@
+local validate = import '../main.libsonnet';
 local d = import 'github.com/jsonnet-libs/docsonnet/doc-util/main.libsonnet';
-local validate = import 'validate-libsonnet/main.libsonnet';
 
 {
   '#func'::
@@ -18,5 +18,5 @@ local validate = import 'validate-libsonnet/main.libsonnet';
     );
     {/* do something here */ },
 
-  return: self.func(100, 'this is a string', 'valid'),
+  return: self.func(100, 20, 'invalid'),
 }

@@ -27,13 +27,13 @@ local d = import 'github.com/jsonnet-libs/docsonnet/doc-util/main.libsonnet';
       ||| % [
         std.strReplace(
           importstr 'example/fromdocstring.jsonnet',
-          'validate-libsonnet',
-          'github.com/crdsonnet/validate-libsonnet',
+          '../main.libsonnet',
+          'github.com/crdsonnet/validate-libsonnet/main.libsonnet',
         ),
         std.strReplace(
           importstr 'example/fromdocstring.jsonnet.output',
-          'validate-libsonnet',
-          'github.com/crdsonnet/validate-libsonnet',
+          '../main.libsonnet',
+          'github.com/crdsonnet/validate-libsonnet/main.libsonnet',
         ),
       ],
       std.thisFile,
@@ -58,13 +58,13 @@ local d = import 'github.com/jsonnet-libs/docsonnet/doc-util/main.libsonnet';
     ||| % [
       std.strReplace(
         importstr 'example/simple.jsonnet',
-        'validate-libsonnet',
-        'github.com/crdsonnet/validate-libsonnet',
+        '../main.libsonnet',
+        'github.com/crdsonnet/validate-libsonnet/main.libsonnet',
       ),
       std.strReplace(
         importstr 'example/fromdocstring.jsonnet.output',
-        'validate-libsonnet',
-        'github.com/crdsonnet/validate-libsonnet',
+        '../main.libsonnet',
+        'github.com/crdsonnet/validate-libsonnet/main.libsonnet',
       ),
     ],
     args=[d.arg('checks', d.T.object)],
@@ -117,13 +117,13 @@ local d = import 'github.com/jsonnet-libs/docsonnet/doc-util/main.libsonnet';
     ||| % [
       std.strReplace(
         importstr 'example/fromdocstring.jsonnet',
-        'validate-libsonnet',
-        'github.com/crdsonnet/validate-libsonnet',
+        '../main.libsonnet',
+        'github.com/crdsonnet/validate-libsonnet/main.libsonnet',
       ),
       std.strReplace(
         importstr 'example/fromdocstring.jsonnet.output',
-        'validate-libsonnet',
-        'github.com/crdsonnet/validate-libsonnet',
+        '../main.libsonnet',
+        'github.com/crdsonnet/validate-libsonnet/main.libsonnet',
       ),
     ],
     args=[
@@ -171,13 +171,36 @@ local d = import 'github.com/jsonnet-libs/docsonnet/doc-util/main.libsonnet';
   schemaCheck(param, schema):
     local indent = '    ';
     [
-      v.validate(param, schema),
+      v.validateQuietly(param, schema),
       '\n%sValue %s MUST match schema:' % [indent, std.manifestJson(param)],
       indent + std.manifestJsonEx(schema, '  ', '\n  ' + indent),
     ],
 
   '#crdCheck': d.fn(
-    '`crdCheck` validates `object` against a set of CRDs.',
+    |||
+      `crdCheck` validates `object` against a set of CRDs.
+
+      ```jsonnet
+      %s
+      ```
+
+      A failure output would look like this:
+
+      ```
+      %s
+      ```
+    ||| % [
+      std.strReplace(
+        importstr 'example/crdCheck.jsonnet',
+        '../main.libsonnet',
+        'github.com/crdsonnet/validate-libsonnet/main.libsonnet',
+      ),
+      std.strReplace(
+        importstr 'example/crdCheck.jsonnet.output',
+        '../main.libsonnet',
+        'github.com/crdsonnet/validate-libsonnet/main.libsonnet',
+      ),
+    ],
     args=[
       d.arg('object', d.T.object),
       d.arg('crds', d.T.array),

@@ -7,8 +7,8 @@ Here's a comprehensive example validating the function arguments against the
 arguments documented by docsonnet:
 
 ```jsonnet
-local d = import 'github.com/jsonnet-libs/docsonnet/doc-util/main.libsonnet';
 local validate = import 'github.com/crdsonnet/validate-libsonnet/main.libsonnet';
+local d = import 'github.com/jsonnet-libs/docsonnet/doc-util/main.libsonnet';
 
 {
   '#func'::
@@ -27,7 +27,7 @@ local validate = import 'github.com/crdsonnet/validate-libsonnet/main.libsonnet'
     );
     {/* do something here */ },
 
-  return: self.func(100, 'this is a string', 'valid'),
+  return: self.func(100, 20, 'invalid'),
 }
 
 ```
@@ -35,7 +35,7 @@ local validate = import 'github.com/crdsonnet/validate-libsonnet/main.libsonnet'
 A failure output would look like this:
 
 ```
-TRACE: vendor/github.com/crdsonnet/validate-libsonnet/main.libsonnet:63 
+TRACE: main.libsonnet:95 
 Invalid parameters:
   Parameter enum is invalid:
     Value "invalid" MUST match schema:
@@ -52,8 +52,8 @@ Invalid parameters:
         "type": "string"
       }
 RUNTIME ERROR: Assertion failed
-	fromdocstring.jsonnet:(15:5)-(19:31)	
-	fromdocstring.jsonnet:21:11-40	object <anonymous>
+	example/fromdocstring.jsonnet:(15:5)-(19:31)	
+	example/fromdocstring.jsonnet:21:11-40	object <anonymous>
 	Field "return"	
 	During manifestation	
 
@@ -104,14 +104,14 @@ local func(arg) =
   });
   {/* do something here */ };
 
-func('this is a string')
+func(false)
 
 ```
 
 A failure output would look like this:
 
 ```
-TRACE: vendor/github.com/crdsonnet/validate-libsonnet/main.libsonnet:63 
+TRACE: main.libsonnet:95 
 Invalid parameters:
   Parameter enum is invalid:
     Value "invalid" MUST match schema:
@@ -128,8 +128,8 @@ Invalid parameters:
         "type": "string"
       }
 RUNTIME ERROR: Assertion failed
-	fromdocstring.jsonnet:(15:5)-(19:31)	
-	fromdocstring.jsonnet:21:11-40	object <anonymous>
+	example/fromdocstring.jsonnet:(15:5)-(19:31)	
+	example/fromdocstring.jsonnet:21:11-40	object <anonymous>
 	Field "return"	
 	During manifestation	
 
@@ -150,8 +150,8 @@ PARAMETERS:
 `checkParamsFromDocstring` validates `params` against a docsonnet `docstring` object.
 
 ```jsonnet
-local d = import 'github.com/jsonnet-libs/docsonnet/doc-util/main.libsonnet';
 local validate = import 'github.com/crdsonnet/validate-libsonnet/main.libsonnet';
+local d = import 'github.com/jsonnet-libs/docsonnet/doc-util/main.libsonnet';
 
 {
   '#func'::
@@ -170,7 +170,7 @@ local validate = import 'github.com/crdsonnet/validate-libsonnet/main.libsonnet'
     );
     {/* do something here */ },
 
-  return: self.func(100, 'this is a string', 'valid'),
+  return: self.func(100, 20, 'invalid'),
 }
 
 ```
@@ -178,7 +178,7 @@ local validate = import 'github.com/crdsonnet/validate-libsonnet/main.libsonnet'
 A failure output would look like this:
 
 ```
-TRACE: vendor/github.com/crdsonnet/validate-libsonnet/main.libsonnet:63 
+TRACE: main.libsonnet:95 
 Invalid parameters:
   Parameter enum is invalid:
     Value "invalid" MUST match schema:
@@ -195,8 +195,8 @@ Invalid parameters:
         "type": "string"
       }
 RUNTIME ERROR: Assertion failed
-	fromdocstring.jsonnet:(15:5)-(19:31)	
-	fromdocstring.jsonnet:21:11-40	object <anonymous>
+	example/fromdocstring.jsonnet:(15:5)-(19:31)	
+	example/fromdocstring.jsonnet:21:11-40	object <anonymous>
 	Field "return"	
 	During manifestation	
 
@@ -215,6 +215,40 @@ PARAMETERS:
 * **crds** (`array`)
 
 `crdCheck` validates `object` against a set of CRDs.
+
+```jsonnet
+local validate = import 'github.com/crdsonnet/validate-libsonnet/main.libsonnet';
+
+local crds = std.parseYaml(importstr './crds.yaml');
+local object = {
+  kind: 'ContactPoint',
+  apiVersion: 'alerting.grafana.crossplane.io/v1alpha1',
+  spec: {
+    deletionPolicy: null,
+    forProvider: {},
+  },
+};
+
+assert validate.crdCheck(object, crds); true
+
+
+```
+
+A failure output would look like this:
+
+```
+TRACE: validate.libsonnet:24 ERR invalid enum, value should be one of [
+    "Orphan",
+    "Delete"
+]: 
+null
+RUNTIME ERROR: Assertion failed
+	example/crdCheck.jsonnet:13:1-45	
+	During evaluation	
+
+
+```
+
 ### fn getChecksFromDocstring
 
 ```jsonnet
