@@ -215,7 +215,7 @@ local d = import 'github.com/jsonnet-libs/docsonnet/doc-util/main.libsonnet';
     local findVersion(versions, version) =
       std.filter(
         function(v)
-          v.namme == version,
+          v.name == version,
         versions
       );
 
