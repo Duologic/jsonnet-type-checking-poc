@@ -12,6 +12,17 @@
       root.genericTestCases
     ),
 
+  local silent = self + { trace(result, object, message): result },
+  validateQuietly: silent.validate,
+
+  notImplemented(key, schema):
+    std.trace('JSON Schema attribute `%s` not implemented.' % key, true),
+
+  trace(result, object, message):
+    if result
+    then true
+    else std.trace('ERR %s: \n%s' % [message, std.manifestJson(object)], false),
+
   process(object, schema, testcases):
     std.all([
       testcases[keyword](object, schema)
@@ -21,112 +32,133 @@
 
   types: {
     boolean(object, schema):
-      std.isBoolean(object),
+      root.trace(
+        std.isBoolean(object),
+        object,
+        'not a boolean',
+      ),
 
     'null'(object, schema):
-      std.type(object) == 'null',
+      root.trace(
+        std.type(object) == 'null',
+        object,
+        'not a null',
+      ),
 
     string(object, schema)::
-      // foldStart
       if !std.isString(object)
-      then false
+      then root.trace(
+        false,
+        object,
+        'not a string',
+      )
       else root.process(
         object,
         schema,
         root.typeTestCases.string
       ),
-    // foldEnd
 
     number(object, schema)::
-      // foldStart
       if !std.isNumber(object)
-      then false
+      then root.trace(
+        false,
+        object,
+        'not a number',
+      )
       else root.process(
         object,
         schema,
         root.typeTestCases.number
       ),
-    // foldEnd
 
     integer(object, schema)::
-      // foldStart
       if !std.isNumber(object)
          && std.mod(object, 1) != 0
-      then false
+      then root.trace(
+        false,
+        object,
+        'not an integer',
+      )
       else root.process(
         object,
         schema,
         root.typeTestCases.number
       ),
-    // foldEnd
 
     object(object, schema)::
-      // foldStart
       if !std.isObject(object)
-      then false
+      then
+        root.trace(
+          false,
+          object,
+          'not an object',
+        )
       else root.process(
         object,
         schema,
         root.typeTestCases.object
       ),
-    // foldEnd
 
     array(object, schema)::
-      // foldStart
       if !std.isArray(object)
-      then false
+      then root.trace(
+        false,
+        object,
+        'not an array',
+      )
       else root.process(
         object,
         schema,
         root.typeTestCases.array
       ),
-    // foldEnd
   },
-
-  notImplemented(key, schema):
-    std.trace('JSON Schema attribute `%s` not implemented.' % key, true),
 
   genericTestCases: {
     enum(object, schema):
-      std.member(schema.enum, object),
+      root.trace(
+        std.member(schema.enum, object),
+        object,
+        'invalid enum, value should be one of %s' % std.manifestJson(schema.enum),
+      ),
 
     const(object, schema):
-      object == schema.const,
+      root.trace(
+        object == schema.const,
+        object,
+        'invalid const, value should be %s' % schema.const,
+      ),
 
     not(object, schema):
-      !root.validate(object, schema.not),
+      root.trace(
+        !root.validate(object, schema.not),
+        object,
+        'invalid not, should not match %s' % schema.not,
+      ),
 
     allOf(object, schema):
-      // foldStart
       std.all([
         root.validate(object, s)
         for s in schema.allOf
       ]),
-    // foldEnd
 
     anyOf(object, schema):
-      // foldStart
       std.any([
         root.validate(object, s)
         for s in schema.anyOf
       ]),
-    // foldEnd
 
     oneOf(object, schema):
-      // foldStart
       std.length([
         true
         for s in schema.oneOf
         if root.validate(object, s)
       ]) == 1,
-    // foldEnd
 
     'if'(object, schema):
-      // foldStart
-      if root.validate(
+      if silent.validate(
         object,
         std.mergePatch(
-          schema { 'if': true, 'then': true },
+          schema + { 'if': true, 'then': true },
           schema['if']
         )
       )
@@ -136,7 +168,7 @@
           root.validate(
             object,
             std.mergePatch(
-              schema { 'if': true, 'then': true },
+              schema + { 'if': true, 'then': true },
               schema['then']
             )
           )
@@ -147,36 +179,44 @@
           root.validate(
             object,
             std.mergePatch(
-              schema { 'if': true, 'then': true },
+              schema + { 'if': true, 'then': true },
               schema['else']
             )
           )
         else true,
-    // foldEnd
 
     type(object, schema):
-      // foldStart
       if std.isBoolean(schema.type)
-      then object != null
+      then root.trace(
+        object != null,
+        object,
+        'invalid type, should not be null',
+      )
 
       else if std.isArray(schema.type)
       then std.any([
-        root.types[t](object, schema)
+        silent.types[t](object, schema)
         for t in schema.type
       ])
 
       else root.types[schema.type](object, schema),
-    // foldEnd
   },
 
   typeTestCases: {
     string: {
-      // foldStart
       minLength(object, schema):
-        std.length(object) >= schema.minLength,
+        root.trace(
+          std.length(object) >= schema.minLength,
+          object,
+          'string too short, expected minLength %s' % schema.minLength,
+        ),
 
       maxLength(object, schema):
-        std.length(object) <= schema.maxLength,
+        root.trace(
+          std.length(object) <= schema.maxLength,
+          object,
+          'string too long, expected maxLength %s' % schema.maxLength,
+        ),
 
       pattern(object, schema):
         root.notImplemented('pattern', schema),
@@ -184,16 +224,32 @@
       // vocabulary specific
       //format(object, schema):
       //  root.notImplemented('format', schema),
-    },  // foldEnd
+    },
 
     number: {
-      // foldStart
-      multipleOf(object, schema): std.mod(object, schema.multipleOf) == 0,
-      minimum(object, schema): object >= schema.minimum,
-      maximum(object, schema): object <= schema.maximum,
+      multipleOf(object, schema):
+        root.trace(
+          std.mod(object, schema.multipleOf) == 0,
+          object,
+          'number not a multipleOf %s' % schema.multipleOf,
+        ),
+
+      minimum(object, schema):
+        root.trace(
+          object >= schema.minimum,
+          object,
+          'number too small, expected minimum %s' % schema.minimum,
+        ),
+
+      maximum(object, schema):
+        root.trace(
+          object <= schema.maximum,
+          object,
+          'number too big, expected maximum %s' % schema.maximum,
+        ),
 
       exclusiveMinimum(object, schema):
-        if std.isBoolean(schema.exclusiveMinimum)  // Draft 4
+        if std.isBoolean(schema.exclusiveMinimum)  // Draft 4 defines this as a boolean
         then
           if 'minimum' in schema
           then
@@ -201,10 +257,15 @@
             then object > schema.minimum
             else object >= schema.minimum
           else true  // invalid schema doesn't mean invalid object
-        else object > schema.exclusiveMinimum,
+        else root.trace(
+          object > schema.exclusiveMinimum,
+          object,
+          'number too small, expected exclusiveMinimum %s' % schema.exclusiveMinimum,
+        ),
+
 
       exclusiveMaximum(object, schema):
-        if std.isBoolean(schema.exclusiveMaximum)  // Draft 4
+        if std.isBoolean(schema.exclusiveMaximum)  // Draft 4 defines this as a boolean
         then
           if 'maximum' in schema
           then
@@ -212,11 +273,14 @@
             then object > schema.maximum
             else object >= schema.maximum
           else true  // invalid schema doesn't mean invalid object
-        else object > schema.exclusiveMaximum,
-    },  // foldEnd
+        else root.trace(
+          object > schema.exclusiveMaximum,
+          object,
+          'number too small, expected exclusiveMaximum %s' % schema.exclusiveMaximum,
+        ),
+    },
 
     object: {
-      // foldStart
       patternProperties(object, schema):
         root.notImplemented('patternProperties', schema),
       dependentRequired(object, schema):
@@ -234,94 +298,137 @@
         ]),
 
       required(object, schema):
-        std.all([
+        local result = std.all([
           std.member(std.objectFields(object), property)
           for property in schema.required
-        ]),
+        ]);
+        root.trace(
+          result,
+          object,
+          'object missing one or more required fields %s' % std.manifestJson(schema.required),
+        ),
 
       propertyNames(object, schema):
         std.all([
-          self.string(property, schema.propertyNames)
+          root.typeTestCases.string(property, schema.propertyNames)
           for property in std.objectFields(schema)
         ]),
 
       minProperties(object, schema):
-        std.count(std.objectFields(object)) >= schema.minProperties,
+        root.trace(
+          std.count(std.objectFields(object)) >= schema.minProperties,
+          object,
+          'object has too few properties, expected minProperties %s' % schema.minProperties,
+        ),
 
       maxProperties(object, schema):
-        std.count(std.objectFields(object)) <= schema.maxProperties,
+        root.trace(
+          std.count(std.objectFields(object)) <= schema.maxProperties,
+          object,
+          'object has too many properties, expected maxProperties %s' % schema.maxProperties,
+        ),
 
-    },  // foldEnd
+    },
 
     array: {
-      // foldStart
       minItems(object, schema):
-        std.length(object) >= schema.minItems,
+        root.trace(
+          std.length(object) >= schema.minItems,
+          object,
+          'array has too few items, expected minItems %s' % schema.minItems,
+        ),
 
       maxItems(object, schema):
-        std.length(object) <= schema.maxItems,
+        root.trace(
+          std.length(object) <= schema.maxItems,
+          object,
+          'array has too many items, expected maxItems %s' % schema.maxItems,
+        ),
 
       uniqueItems(object, schema):
         local f = function(x) std.md5(std.manifestJson(x));
         if schema.uniqueItems
-        then std.set(object, f) == std.sort(object, f)
+        then root.trace(
+          std.set(object, f) == std.sort(object, f),
+          object,
+          'array items should be unique',
+        )
         else true,
 
       prefixItems(object, schema):
-        if std.length(schema.prefixItems) > 0
-        then
-          local lengthCheck =
-            if 'items' in schema
-               && std.isBoolean(schema.items)
-               && !schema.items
-            then std.length(object) == std.length(schema.prefixItems)
-            else std.length(object) >= std.length(schema.prefixItems);
+        local result = (
+          if std.length(schema.prefixItems) > 0
+          then
+            local lengthCheck =
+              if 'items' in schema
+                 && std.isBoolean(schema.items)
+                 && !schema.items
+              then std.length(object) == std.length(schema.prefixItems)
+              else std.length(object) >= std.length(schema.prefixItems);
 
-          if !lengthCheck
-          then false
-          else
-            std.all([
-              root.validate(object[i], schema.prefixItems[i])
-              for i in std.range(0, std.length(schema.prefixItems) - 1)
-            ])
-        else true,
+            if !lengthCheck
+            then false
+            else
+              std.all([
+                root.validate(object[i], schema.prefixItems[i])
+                for i in std.range(0, std.length(schema.prefixItems) - 1)
+              ])
+          else true
+        );
+        root.trace(
+          result,
+          object,
+          'array items do not match prefixItems',
+        ),
 
       items(object, schema):
-        if std.isBoolean(schema.items)
-        then true  // only valid in the context of prefixItems
-        else
-          if std.length(object) == 0
-          then true  // validated by prefixItems and min/maxLength
+        local result = (
+          if std.isBoolean(schema.items)
+          then true  // only valid in the context of prefixItems
           else
-            local count =
-              if 'prefixItems' in schema
-              then std.length(schema.prefixItems)
-              else 0;
-            std.all([
-              root.validate(item, schema.items)
-              for item in object[count:]
-            ]),
+            if std.length(object) == 0
+            then true  // validated by prefixItems and min/maxLength
+            else
+              local count =
+                if 'prefixItems' in schema
+                then std.length(schema.prefixItems)
+                else 0;
+              std.all([
+                root.validate(item, schema.items)
+                for item in object[count:]
+              ])
+        );
+        root.trace(
+          result,
+          object,
+          'array one or more items do not match schema',
+        ),
 
       contains(object, schema):
-        local validated = [
-          true
-          for item in object
-          if root.validate(item, schema.contains)
-        ];
-        std.any(validated)
-        && std.all([
-          if 'minContains' in schema
-          then std.length(validated) >= schema.minContains
-          else true,
-          if 'maxContains' in schema
-          then std.length(validated) <= schema.maxContains
-          else true,
-        ]),
+        local result = (
+          local validated = [
+            true
+            for item in object
+            if root.validate(item, schema.contains)
+          ];
+          std.any(validated)
+          && std.all([
+            if 'minContains' in schema
+            then std.length(validated) >= schema.minContains
+            else true,
+            if 'maxContains' in schema
+            then std.length(validated) <= schema.maxContains
+            else true,
+          ])
+        );
+        root.trace(
+          result,
+          object,
+          'array does not contain required items %s' % schema.contains,
+        ),
 
       unevaluatedItems(object, schema):
         root.notImplemented('unevaluatedItems', schema),
-    },  // foldEnd
+    },
   },
 }
-
-// vim: foldmethod=marker foldmarker=foldStart,foldEnd foldlevel=0

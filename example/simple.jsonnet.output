@@ -1,8 +1,8 @@
-TRACE: vendor/validate-libsonnet/main.libsonnet:63 
+TRACE: main.libsonnet:95 
 Invalid parameters:
   Parameter arg is invalid.
 RUNTIME ERROR: Assertion failed
-	simple.jsonnet:(4:3)-(7:29)	
-	simple.jsonnet:9:1-9	$
+	example/simple.jsonnet:(4:3)-(7:29)	
+	example/simple.jsonnet:9:1-12	$
 	During evaluation	
 

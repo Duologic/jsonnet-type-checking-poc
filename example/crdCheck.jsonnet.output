@@ -1,0 +1,9 @@
+TRACE: validate.libsonnet:24 ERR invalid enum, value should be one of [
+    "Orphan",
+    "Delete"
+]: 
+null
+RUNTIME ERROR: Assertion failed
+	example/crdCheck.jsonnet:13:1-45	
+	During evaluation	
+
